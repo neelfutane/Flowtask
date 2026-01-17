@@ -1,11 +1,11 @@
-import cloudinary from "../utils/cloudinary.js";
-import { extractTextFromPDF } from "../utils/pdfParser.js";
-import { extractTasksFromText } from "../utils/taskExtractor.js";
-import { Task } from "../models/task.model.js";
-import { File } from "../models/file.model.js";
-import fs from "fs";
+const cloudinary = require("../utils/cloudinary");
+const { extractTextFromPDF } = require("../utils/pdfParser");
+const { extractTasksFromText } = require("../utils/taskExtractor");
+const { Task } = require("../models/task.model");
+const { File } = require("../models/file.model");
+const fs = require("fs");
 
-export const importTasksFromPDF = async (req, res) => {
+const importTasksFromPDF = async (req, res) => {
   try {
     const { projectId } = req.body;
 
@@ -68,4 +68,8 @@ export const importTasksFromPDF = async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
   }
+};
+
+module.exports = {
+  importTasksFromPDF
 };

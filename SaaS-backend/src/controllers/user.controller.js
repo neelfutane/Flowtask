@@ -1,6 +1,6 @@
-import  User  from "../models/user.model.js";
+const User = require("../models/user.model");
 
-export const registerUser = async (req, res) => {
+const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -44,7 +44,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-export const loginUser = async (req, res) => {
+const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -91,4 +91,9 @@ export const loginUser = async (req, res) => {
       message: "Login failed"
     });
   }
+};
+
+module.exports = {
+  registerUser,
+  loginUser
 };
