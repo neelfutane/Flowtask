@@ -21,40 +21,59 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: 6,
-      select: false // IMPORTANT (security)
+      select: false
     },
 
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user"
+    },
+
+    /*  NEW */
+    refreshToken: {
+      type: String
     }
   },
   { timestamps: true }
 );
 
+/* Hash password */
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return ;// If password is not modified, skip
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-userSchema.methods.generateJWT = function () {
+/*  Access Token */
+userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       id: this._id,
       email: this.email,
       role: this.role
     },
-    process.env.JWT_SECRET,
+    process.env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.JWT_EXPIRES_IN
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY
     }
   );
 };
 
+/* Refresh Token */
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    {
+      id: this._id
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+    }
+  );
+};
+
+/* Compare password */
 userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
-
-
 module.exports = mongoose.model("User", userSchema);
