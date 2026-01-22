@@ -28,4 +28,4 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
-module.exports = upload; // ✅ Correct: export the instance
+module.exports = upload; // Correct: export the instance

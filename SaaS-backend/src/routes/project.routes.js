@@ -3,7 +3,6 @@ const router = express.Router();
 
 const { verifyJWT } = require("../middlewares/auth.middleware");
 
-/* Example controller */
 const createProject = (req, res) => {
   res.status(201).json({
     message: "Project created successfully",
