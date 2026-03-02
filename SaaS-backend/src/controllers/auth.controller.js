@@ -1,25 +1,43 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/user.model"); // make sure file name matches exactly
+const User = require("../models/user.model");
+const { sendWelcomeEmail } = require("../services/email.service");
 
+/* =========================
+   REGISTER
+========================= */
 const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check if user already exists
+    // 1. Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists"
+        message: "User with this email already exists"
       });
     }
 
-    // Create user
-    const user = await User.create({ name, email, password });
+    // 2. Create user (password auto-hashed via model middleware)
+    const user = await User.create({
+      name,
+      email,
+      password,
+      settings: {
+        emailNotifications: true,
+        taskReminders: true,
+        projectUpdates: false,
+        theme: "system"
+      }
+    });
+
+    // 3. Send welcome email (non-blocking)
+    sendWelcomeEmail({ name: user.name, email: user.email })
+      .catch(err => console.error("Welcome email error:", err));
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully",
+      message: "Account created successfully! Please log in.",
       user: {
         id: user._id,
         name: user.name,
@@ -27,45 +45,59 @@ const register = async (req, res) => {
         role: user.role
       }
     });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Registration error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Registration failed. Please try again."
+    });
   }
 };
 
 
+/* =========================
+   LOGIN
+========================= */
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Find user
+    // 1. Find user with password
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
 
-    // 2. Check password
+    // 2. Compare password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials"
+      });
     }
 
     // 3. Generate tokens
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
-    // 4. Save refresh token in DB
+    // 4. Save refresh token
     user.refreshToken = refreshToken;
     await user.save();
 
-    // 5. Set refresh token in HTTP-only cookie
+    // 5. Send refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, // true in production
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
-    // 6. Send access token
+    // 6. Send access token in response
     res.status(200).json({
       success: true,
       accessToken,
@@ -76,27 +108,42 @@ const login = async (req, res) => {
         role: user.role
       }
     });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: "Login failed", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Login failed",
+      error: error.message
+    });
   }
 };
 
+
+/* =========================
+   REFRESH ACCESS TOKEN
+========================= */
 const refreshAccessToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
-      return res.status(401).json({ success: false, message: "No refresh token" });
+      return res.status(401).json({
+        success: false,
+        message: "No refresh token provided"
+      });
     }
 
     // 1. Find user by refresh token
     const user = await User.findOne({ refreshToken });
     if (!user) {
-      return res.status(403).json({ success: false, message: "Invalid refresh token" });
+      return res.status(403).json({
+        success: false,
+        message: "Invalid refresh token"
+      });
     }
 
-    // 2. Verify refresh token
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    // 2. Verify token
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     // 3. Generate new access token
     const newAccessToken = user.generateAccessToken();
@@ -105,20 +152,31 @@ const refreshAccessToken = async (req, res) => {
       success: true,
       accessToken: newAccessToken
     });
+
   } catch (error) {
-    res.status(403).json({ success: false, message: "Could not refresh token", error: error.message });
+    res.status(403).json({
+      success: false,
+      message: "Could not refresh token",
+      error: error.message
+    });
   }
 };
 
+
+/* =========================
+   LOGOUT
+========================= */
 const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
     if (refreshToken) {
-      await User.findOneAndUpdate({ refreshToken }, { refreshToken: null });
+      await User.findOneAndUpdate(
+        { refreshToken },
+        { refreshToken: null }
+      );
     }
 
-    // Clear cookie
     res.clearCookie("refreshToken", {
       httpOnly: true,
       sameSite: "strict"
@@ -128,10 +186,16 @@ const logout = async (req, res) => {
       success: true,
       message: "Logged out successfully"
     });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: "Logout failed", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Logout failed",
+      error: error.message
+    });
   }
 };
+
 
 module.exports = {
   register,

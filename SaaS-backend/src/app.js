@@ -8,6 +8,8 @@ const authRoutes = require("./routes/auth.routes");
 const dashboardRoutes = require("./routes/dashboard.routes"); 
 const projectRoutes = require("./routes/project.routes");
 const teamRoutes = require("./routes/team.routes");
+const notificationRoutes = require("./routes/notification.routes");
+require("./jobs/deadline-reminder");
 
 const app = express();
 
@@ -27,6 +29,8 @@ app.use("/api/v1/tasks", taskRoutes);  // protected via middleware
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/teams", teamRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
+app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {
   res.send("Backend is running");
