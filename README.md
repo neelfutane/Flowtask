@@ -20,7 +20,7 @@ This repository contains the backend for the **FlowTask** SaaS application. It p
 ## Frontend Integration
 
 The frontend for FlowTask is hosted in a separate repository: **ZenFlow-Projects**.  
-You can access it .
+You can access it https://github.com/neelfutane/zenflow-projects.git.
 
 > ⚠️ Note: The frontend could not be included in this backend repository due to a configuration error, so it remains in a separate repo.
 
