@@ -16,17 +16,11 @@ This repository contains the backend for the **FlowTask** SaaS application. It p
 - npm >= 9.x
 - MongoDB or your preferred database
 
-## Installation
-
-```bash
-git clone <this-repo-url>
-cd flowtask-backend
-npm install
 
 ## Frontend Integration
 
 The frontend for FlowTask is hosted in a separate repository: **ZenFlow-Projects**.  
-You can access it [here](https://github.com/<your-username>/zenflow-projects).
+You can access it .
 
 > ⚠️ Note: The frontend could not be included in this backend repository due to a configuration error, so it remains in a separate repo.
 
@@ -36,3 +30,11 @@ You can access it [here](https://github.com/<your-username>/zenflow-projects).
 2. Create a branch:  
    ```bash
    git checkout -b feature/your-feature
+
+
+## Installation
+
+```bash
+git clone <this-repo-url>
+cd flowtask-backend
+npm install
